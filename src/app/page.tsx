@@ -212,12 +212,10 @@ export default function Home() {
   };
 
   const connectWebSocket = () => {
-    // Use Cloudflare Worker WebSocket URL
+    // Use proper WebSocket URL for both development and production
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const workerUrl = process.env.NODE_ENV === 'production' 
-      ? 'wss://email-sender-worker.your-subdomain.workers.dev'
-      : `${wsProtocol}//${window.location.host}/ws`;
-    const socket = new WebSocket(workerUrl);
+    const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+    const socket = new WebSocket(wsUrl);
     let connectionTimeout: NodeJS.Timeout;
     connectionTimeout = setTimeout(() => {
       if (socket.readyState !== WebSocket.OPEN) {

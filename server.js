@@ -10,8 +10,8 @@ const fs = require("fs");
 const crypto = require("crypto");
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = dev ? "localhost" : "0.0.0.0";
-const port = process.env.PORT || 3000;
+const hostname = "0.0.0.0"; // Always bind to all interfaces for deployment
+const port = parseInt(process.env.PORT) || 10000; // Use Render's default port
 
 // Initialize Next.js app
 const app = next({ dev, hostname, port });
