@@ -103,7 +103,7 @@ function createTransporter(smtpConfig) {
   const portNum = parseInt(smtpConfig.port);
   const isSecurePort = portNum === 465;
   
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: smtpConfig.host,
     port: portNum,
     secure: isSecurePort, // true for SSL (port 465), false for STARTTLS (port 587)
