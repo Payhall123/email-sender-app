@@ -1,0 +1,13 @@
+{
+  "name": "email-sender-websocket-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for email sending WebSocket",
+  "main": "worker.js",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0"
+  }
+}

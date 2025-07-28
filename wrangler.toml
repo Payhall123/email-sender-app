@@ -1,0 +1,11 @@
+name = "email-sender-worker"
+main = "src/worker.js"
+compatibility_date = "2024-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+NODE_ENV = "production"
+
+# WebSocket support
+[env.production]
+vars = { NODE_ENV = "production" }
