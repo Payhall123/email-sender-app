@@ -100,16 +100,22 @@ function createTransporter(smtpConfig) {
     secure: smtpConfig.secure
   });
 
-  return nodemailer.createTransport({
+  const portNum = parseInt(smtpConfig.port);
+  const isSecurePort = portNum === 465;
+  
+  return nodemailer.createTransporter({
     host: smtpConfig.host,
-    port: parseInt(smtpConfig.port),
-    secure: smtpConfig.secure, // true for SSL (port 465), false for STARTTLS (port 587)
+    port: portNum,
+    secure: isSecurePort, // true for SSL (port 465), false for STARTTLS (port 587)
+    requireTLS: !isSecurePort, // Force STARTTLS for non-secure ports
     auth: {
       user: smtpConfig.user,
       pass: smtpConfig.password,
     },
     tls: {
       rejectUnauthorized: false,
+      minVersion: 'TLSv1',
+      maxVersion: 'TLSv1.3',
     },
     connectionTimeout: 60000, // 60 seconds
     greetingTimeout: 30000,   // 30 seconds
