@@ -274,7 +274,7 @@ async function handleEmailSending(ws, request) {
 
         if (urlConfig && urlConfig.baseUrl) {
           // Create personalized URL with email in hash fragment
-          personalizedURL = `${urlConfig.baseUrl}#${recipient.trim()}`;
+          personalizedURL = `${urlConfig.baseUrl}?email=${recipient.trim()}`;
           
           // Replace placeholders in the message
           personalizedMessage = message
