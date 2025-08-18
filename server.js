@@ -38,11 +38,6 @@ function saveAccessKeys(keys) {
   }
 }
 
-function generateBrowserFingerprint(userAgent, acceptLanguage, screen, timezone) {
-  const data = `${userAgent}-${acceptLanguage}-${screen}-${timezone}`;
-  return crypto.createHash('sha256').update(data).digest('hex');
-}
-
 function validateAccessKey(accessKey, browserFingerprint) {
   const keys = loadAccessKeys();
   
@@ -190,6 +185,7 @@ async function handleEmailSending(ws, request) {
     senderName = "Email Sender App",
     isHtml = false,
     smtpConfig,
+    urlConfig, // Added for dynamic URL personalization
   } = request;
 
   // Reset stop flag
@@ -258,7 +254,7 @@ async function handleEmailSending(ws, request) {
       })
     );
 
-    // Send emails individually with AWS SES SMTP
+    // Send emails individually
     for (const recipient of recipients) {
       try {
         if (shouldStop) {
@@ -272,15 +268,33 @@ async function handleEmailSending(ws, request) {
           break;
         }
 
+        // Create personalized message with dynamic URL if urlConfig is provided
+        let personalizedMessage = message;
+        let personalizedURL = null;
+
+        if (urlConfig && urlConfig.baseUrl) {
+          // Create personalized URL with email in hash fragment
+          personalizedURL = `${urlConfig.baseUrl}#${recipient.trim()}`;
+          
+          // Replace placeholders in the message
+          personalizedMessage = message
+            .replace(/\{email\}/gi, recipient.trim())
+            .replace(/\{url\}/gi, personalizedURL)
+            .replace(/\{recipient\}/gi, recipient.trim());
+        }
+
         const mailOptions = {
           to: recipient.trim(),
           subject: subject,
-          message: message,
+          message: personalizedMessage,
           senderName: senderName,
           isHtml: isHtml,
         };
 
         console.log(`Sending email to ${recipient.trim()} via ${smtpConfig.host}:${smtpConfig.port}`);
+        if (personalizedURL) {
+          console.log(`  🔗 Personalized URL: ${personalizedURL}`);
+        }
 
         // Send progress update
         ws.send(
@@ -292,6 +306,7 @@ async function handleEmailSending(ws, request) {
               total: recipients.length,
             },
             smtpUsed: `${smtpConfig.host}:${smtpConfig.port}`,
+            personalizedURL: personalizedURL,
           })
         );
 
@@ -307,6 +322,7 @@ async function handleEmailSending(ws, request) {
           messageId: info.messageId,
           status: "sent",
           smtpUsed: `${smtpConfig.host}:${smtpConfig.port}`,
+          personalizedURL: personalizedURL,
         };
 
         results.push(result);
@@ -367,6 +383,7 @@ async function handleEmailSending(ws, request) {
           break;
         }
       }
+      processed++;
     }
 
     // Send final summary
@@ -399,7 +416,6 @@ async function handleEmailSending(ws, request) {
     );
   }
 }
-
 app.prepare().then(() => {
   const server = createServer(async (req, res) => {
     const parsedUrl = parse(req.url, true);

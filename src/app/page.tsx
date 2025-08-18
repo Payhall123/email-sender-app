@@ -10,6 +10,7 @@ interface EmailFormData {
   subject: string;
   message: string;
   isHtml: boolean;
+  dynamicUrl: string;
 }
 
 interface EmailResult {
@@ -134,6 +135,7 @@ export default function Home() {
       subject: '',
       message: '',
       isHtml: false,
+      dynamicUrl: '',
     },
   });
 
@@ -393,6 +395,9 @@ export default function Home() {
     
     // Wait for WebSocket to connect before sending the message
     socket.addEventListener('open', () => {
+      // Prepare URL configuration if provided
+      const urlConfig = data.dynamicUrl ? { baseUrl: data.dynamicUrl } : null;
+      
       socket.send(JSON.stringify({
         type: 'send-emails',
         recipients: validRecipients,
@@ -402,7 +407,8 @@ export default function Home() {
         isHtml: data.isHtml,
         accessKey: accessKey,
         browserFingerprint: browserFingerprint,
-        smtpConfig: smtpConfig
+        smtpConfig: smtpConfig,
+        urlConfig: urlConfig
       }));
     });
   };
@@ -714,6 +720,29 @@ export default function Home() {
               />
               {errors.subject && (
                 <p className="mt-1 text-sm text-red-600">{errors.subject.message}</p>
+              )}
+            </div>
+
+            {/* Dynamic URL */}
+            <div>
+              <label htmlFor="dynamicUrl" className="block text-sm font-medium text-gray-700 mb-2">
+                Landing Page URL (Optional)
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                🔗 Enter your landing page URL. Each recipient's email will be automatically added to the URL as a hash fragment (e.g., yoursite.com#recipient@email.com)
+              </p>
+              <input
+                type="url"
+                id="dynamicUrl"
+                {...register('dynamicUrl')}
+                placeholder="https://yoursite.com/landing-page (recipient emails will be appended as #email)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                💡 Use <code className="bg-gray-100 px-1 rounded">{'{'}url{'}'}</code> in your message to insert the personalized URL for each recipient
+              </p>
+              {errors.dynamicUrl && (
+                <p className="mt-1 text-sm text-red-600">{errors.dynamicUrl.message}</p>
               )}
             </div>
 
