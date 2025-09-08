@@ -60,7 +60,9 @@ export default function Home() {
     port: '587',
     user: '',
     password: '',
-    secure: false
+    secure: false,
+    fromEmail: '', // Custom from email address
+    provider: 'custom' // Provider type for preset configurations
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -114,6 +116,54 @@ export default function Home() {
       setAuthError('Failed to connect to authentication server');
       socket.close();
     };
+  };
+
+  // SMTP Provider presets
+  const smtpPresets = {
+    gmail: {
+      host: 'smtp.gmail.com',
+      port: '587',
+      secure: false,
+      provider: 'gmail'
+    },
+    outlook: {
+      host: 'smtp-mail.outlook.com',
+      port: '587',
+      secure: false,
+      provider: 'outlook'
+    },
+    sendgrid: {
+      host: 'smtp.sendgrid.net',
+      port: '587',
+      secure: false,
+      provider: 'sendgrid'
+    },
+    'aws-ses': {
+      host: 'email-smtp.us-east-1.amazonaws.com',
+      port: '587',
+      secure: false,
+      provider: 'aws-ses'
+    },
+    custom: {
+      host: '',
+      port: '587',
+      secure: false,
+      provider: 'custom'
+    }
+  };
+
+  // Apply SMTP preset
+  const applySmtpPreset = (presetName: string) => {
+    const preset = smtpPresets[presetName as keyof typeof smtpPresets];
+    if (preset) {
+      setSmtpConfig(prev => ({
+        ...prev,
+        host: preset.host,
+        port: preset.port,
+        secure: preset.secure,
+        provider: preset.provider
+      }));
+    }
   };
 
   // Update SMTP config
@@ -512,6 +562,30 @@ export default function Home() {
             </p>
             
             <div className="space-y-4">
+              {/* Provider Presets */}
+              <div>
+                <label htmlFor="smtpPreset" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Provider
+                </label>
+                <select
+                  id="smtpPreset"
+                  value={smtpConfig.provider}
+                  onChange={(e) => {
+                    applySmtpPreset(e.target.value);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="gmail">Gmail</option>
+                  <option value="outlook">Outlook/Hotmail</option>
+                  <option value="sendgrid">SendGrid</option>
+                  <option value="aws-ses">AWS SES</option>
+                  <option value="custom">Custom SMTP</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Select a preset to auto-fill SMTP settings for popular providers.
+                </p>
+              </div>
+              
               <div>
                 <label htmlFor="smtpHost" className="block text-sm font-medium text-gray-700 mb-2">
                   SMTP Host
@@ -543,13 +617,14 @@ export default function Home() {
               <div>
                 <label htmlFor="smtpUser" className="block text-sm font-medium text-gray-700 mb-2">
                   SMTP Username
+                  {smtpConfig.provider === 'sendgrid' && <span className="text-xs text-gray-500 ml-2">(Use 'apikey')</span>}
                 </label>
                 <input
                   type="text"
                   id="smtpUser"
                   value={smtpConfig.user}
                   onChange={(e) => updateSmtpConfig('user', e.target.value)}
-                  placeholder="your-email@gmail.com"
+                  placeholder={smtpConfig.provider === 'sendgrid' ? 'apikey' : 'your-email@gmail.com'}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
@@ -557,6 +632,8 @@ export default function Home() {
               <div>
                 <label htmlFor="smtpPassword" className="block text-sm font-medium text-gray-700 mb-2">
                   SMTP Password
+                  {smtpConfig.provider === 'sendgrid' && <span className="text-xs text-gray-500 ml-2">(SendGrid API Key)</span>}
+                  {smtpConfig.provider === 'aws-ses' && <span className="text-xs text-gray-500 ml-2">(AWS Access Key Secret)</span>}
                 </label>
                 <div className="relative">
                   <input
@@ -564,7 +641,11 @@ export default function Home() {
                     id="smtpPassword"
                     value={smtpConfig.password}
                     onChange={(e) => updateSmtpConfig('password', e.target.value)}
-                    placeholder="Your app password or SMTP password"
+                    placeholder={
+                      smtpConfig.provider === 'sendgrid' ? 'SG.xxxxxxxxxxxx...' :
+                      smtpConfig.provider === 'aws-ses' ? 'Your AWS Secret Access Key' :
+                      'Your app password or SMTP password'
+                    }
                     className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                   <button
@@ -575,6 +656,31 @@ export default function Home() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+              </div>
+              
+              {/* Custom From Email */}
+              <div>
+                <label htmlFor="fromEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                  Custom From Email (Optional)
+                </label>
+                <input
+                  type="email"
+                  id="fromEmail"
+                  value={smtpConfig.fromEmail}
+                  onChange={(e) => updateSmtpConfig('fromEmail', e.target.value)}
+                  placeholder="Custom sender email address"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {smtpConfig.provider === 'gmail' || smtpConfig.provider === 'outlook' ? 
+                    '⚠️ Gmail and Outlook require using the authenticated email address.' :
+                    smtpConfig.provider === 'sendgrid' ? 
+                    '✅ SendGrid allows custom from emails if the domain is verified.' :
+                    smtpConfig.provider === 'aws-ses' ?
+                    '✅ AWS SES allows custom from emails if the email/domain is verified.' :
+                    '✅ Most SMTP servers allow custom from email addresses.'
+                  }
+                </p>
               </div>
               
               <div className="flex items-center">

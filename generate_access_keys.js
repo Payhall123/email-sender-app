@@ -4,7 +4,7 @@ const crypto = require('crypto');
 (function generateAccessKeys() {
   const keys = {};
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 400; i++) {
     const key = generateUniqueKey();
     keys[key] = {
       maxDevices: 2,
@@ -15,7 +15,7 @@ const crypto = require('crypto');
     };
   }
 
-  fs.writeFileSync('access_keys.json', JSON.stringify(keys, null, 2));
+  fs.writeFileSync('access_keys2.json', JSON.stringify(keys, null, 2));
 
   console.log('🔑 Access keys generated and saved to access_keys.json');
   console.log(`Generated ${Object.keys(keys).length} unique access keys`);

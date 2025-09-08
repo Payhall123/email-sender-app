@@ -92,48 +92,145 @@ function createTransporter(smtpConfig) {
     host: smtpConfig.host,
     port: smtpConfig.port,
     user: smtpConfig.user ? smtpConfig.user.substring(0, 10) + "..." : "NOT_SET",
-    secure: smtpConfig.secure
+    secure: smtpConfig.secure,
+    provider: smtpConfig.provider || 'custom'
   });
 
   const portNum = parseInt(smtpConfig.port);
   const isSecurePort = portNum === 465;
   
-  return nodemailer.createTransport({
+  // Base configuration
+  const config = {
     host: smtpConfig.host,
     port: portNum,
     secure: isSecurePort, // true for SSL (port 465), false for STARTTLS (port 587)
-    requireTLS: !isSecurePort, // Force STARTTLS for non-secure ports
     auth: {
       user: smtpConfig.user,
       pass: smtpConfig.password,
-    },
-    tls: {
-      rejectUnauthorized: false,
-      minVersion: 'TLSv1',
-      maxVersion: 'TLSv1.3',
     },
     connectionTimeout: 60000, // 60 seconds
     greetingTimeout: 30000,   // 30 seconds
     socketTimeout: 60000,     // 60 seconds
     debug: true,              // Enable debug logs
     logger: true,             // Enable logger
-  });
+  };
+
+  // Provider-specific configurations
+  const provider = detectProvider(smtpConfig.host);
+  
+  switch (provider) {
+    case 'sendgrid':
+      // SendGrid specific configuration
+      config.auth = {
+        user: 'apikey',
+        pass: smtpConfig.password // This should be the SendGrid API key
+      };
+      config.tls = {
+        rejectUnauthorized: true,
+        minVersion: 'TLSv1.2'
+      };
+      break;
+      
+    case 'aws-ses':
+      // AWS SES specific configuration
+      config.tls = {
+        rejectUnauthorized: true,
+        minVersion: 'TLSv1.2'
+      };
+      config.requireTLS = true;
+      break;
+      
+    case 'gmail':
+      // Gmail specific configuration
+      config.tls = {
+        rejectUnauthorized: false, // Gmail can be lenient
+        minVersion: 'TLSv1'
+      };
+      config.requireTLS = !isSecurePort;
+      break;
+      
+    case 'outlook':
+    case 'hotmail':
+      // Outlook/Hotmail specific configuration
+      config.tls = {
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
+      };
+      config.requireTLS = true;
+      break;
+      
+    default:
+      // Generic SMTP configuration
+      config.tls = {
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1',
+        maxVersion: 'TLSv1.3',
+      };
+      config.requireTLS = !isSecurePort;
+  }
+  
+  return nodemailer.createTransporter(config);
+}
+
+// Detect SMTP provider based on host
+function detectProvider(host) {
+  const hostLower = host.toLowerCase();
+  
+  if (hostLower.includes('sendgrid')) return 'sendgrid';
+  if (hostLower.includes('amazonses') || hostLower.includes('ses.')) return 'aws-ses';
+  if (hostLower.includes('gmail')) return 'gmail';
+  if (hostLower.includes('outlook') || hostLower.includes('hotmail')) return 'outlook';
+  if (hostLower.includes('live.com')) return 'hotmail';
+  
+  return 'custom';
 }
 
 // SMTP email sending function
 async function sendEmail(mailOptions, smtpConfig) {
   const transporter = createTransporter(smtpConfig);
 
-  // Use the authenticated email address as the sender
-  const fromEmail = smtpConfig.user;
+  // Determine the from address based on provider and configuration
+  let fromEmail;
+  let fromName = mailOptions.senderName || 'Email Sender';
+  
+  // Use custom from email if provided and allowed by the provider
+  if (mailOptions.fromEmail && isCustomFromAllowed(smtpConfig.host)) {
+    fromEmail = mailOptions.fromEmail;
+  } else {
+    // Fall back to authenticated email address
+    fromEmail = smtpConfig.user;
+  }
+  
+  // For some providers like SendGrid, we need to use the authenticated domain
+  const provider = detectProvider(smtpConfig.host);
+  if (provider === 'sendgrid' && mailOptions.fromEmail) {
+    // Extract domain from the authenticated email for SendGrid
+    const authDomain = smtpConfig.user.split('@')[1];
+    const customEmailDomain = mailOptions.fromEmail.split('@')[1];
+    
+    // Only allow custom from email if it's from the same domain as the authenticated email
+    if (authDomain === customEmailDomain) {
+      fromEmail = mailOptions.fromEmail;
+    } else {
+      fromEmail = smtpConfig.user;
+      console.warn(`SendGrid: Custom from email domain (${customEmailDomain}) doesn't match authenticated domain (${authDomain}). Using authenticated email.`);
+    }
+  }
 
   const mailOptionsWithFrom = {
-    from: `${mailOptions.senderName || 'Email Sender'} <${fromEmail}>`,
+    from: `${fromName} <${fromEmail}>`,
     to: mailOptions.to,
     subject: mailOptions.subject,
     text: mailOptions.isHtml ? undefined : mailOptions.message,
     html: mailOptions.isHtml ? mailOptions.message : undefined,
+    // Add reply-to if custom from email is different from authenticated email
+    replyTo: mailOptions.fromEmail && mailOptions.fromEmail !== fromEmail ? mailOptions.fromEmail : undefined
   };
+
+  console.log(`Sending email from: ${mailOptionsWithFrom.from} to: ${mailOptionsWithFrom.to}`);
+  if (mailOptionsWithFrom.replyTo) {
+    console.log(`Reply-To: ${mailOptionsWithFrom.replyTo}`);
+  }
 
   const info = await transporter.sendMail(mailOptionsWithFrom);
   console.log("Message sent: %s", info.messageId);
@@ -141,7 +238,27 @@ async function sendEmail(mailOptions, smtpConfig) {
   return {
     messageId: info.messageId,
     service: `${smtpConfig.host}:${smtpConfig.port}`,
+    fromUsed: mailOptionsWithFrom.from
   };
+}
+
+// Check if custom from email is allowed by the provider
+function isCustomFromAllowed(host) {
+  const provider = detectProvider(host);
+  
+  switch (provider) {
+    case 'sendgrid':
+      return true; // SendGrid allows custom from if domain is verified
+    case 'aws-ses':
+      return true; // AWS SES allows custom from if email/domain is verified
+    case 'gmail':
+      return false; // Gmail requires using the authenticated email
+    case 'outlook':
+    case 'hotmail':
+      return false; // Outlook requires using the authenticated email
+    default:
+      return true; // Most generic SMTP servers allow custom from
+  }
 }
 
 // Email retry function for failed emails
@@ -289,6 +406,7 @@ async function handleEmailSending(ws, request) {
           message: personalizedMessage,
           senderName: senderName,
           isHtml: isHtml,
+          fromEmail: smtpConfig.fromEmail, // Pass custom from email if provided
         };
 
         console.log(`Sending email to ${recipient.trim()} via ${smtpConfig.host}:${smtpConfig.port}`);
