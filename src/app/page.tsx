@@ -542,9 +542,10 @@ export default function Home() {
       
       {/* SMTP Configuration Modal */}
       {showSmtpModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] flex flex-col">
+            {/* Fixed Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div className="flex items-center">
                 <Settings className="h-8 w-8 text-indigo-600 mr-3" />
                 <h2 className="text-2xl font-bold text-gray-900">SMTP Configuration</h2>
@@ -557,9 +558,11 @@ export default function Home() {
               </button>
             </div>
             
-            <p className="text-gray-600 mb-6">
-              Configure your SMTP server settings for sending emails.
-            </p>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <p className="text-gray-600 mb-6">
+                Configure your SMTP server settings for sending emails.
+              </p>
             
             <div className="space-y-4">
               {/* Provider Presets */}
@@ -695,8 +698,12 @@ export default function Home() {
                   Use SSL/TLS (port 465)
                 </label>
               </div>
-              
-              <div className="flex justify-end space-x-3 pt-4">
+            </div>
+            </div>
+            
+            {/* Fixed Footer with Buttons */}
+            <div className="p-6 border-t border-gray-200">
+              <div className="flex justify-end space-x-3">
                 <button
                   onClick={() => setShowSmtpModal(false)}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
