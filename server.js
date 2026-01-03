@@ -10,7 +10,7 @@ const fs = require("fs");
 const crypto = require("crypto");
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = "0.0.0.0"; // Always bind to all interfaces for deployment
+const hostname = dev ? "localhost" : "0.0.0.0"; // Bind to localhost in dev, all interfaces in production
 const port = parseInt(process.env.PORT) || 10000; // Use Render's default port
 
 // Initialize Next.js app
@@ -20,69 +20,69 @@ const handle = app.getRequestHandler();
 // Access key management functions
 function loadAccessKeys() {
   try {
-    const data = fs.readFileSync('access_keys.json', 'utf8');
+    const data = fs.readFileSync("access_keys.json", "utf8");
     return JSON.parse(data);
   } catch (error) {
-    console.error('Error loading access keys:', error);
+    console.error("Error loading access keys:", error);
     return {};
   }
 }
 
 function saveAccessKeys(keys) {
   try {
-    fs.writeFileSync('access_keys.json', JSON.stringify(keys, null, 2));
+    fs.writeFileSync("access_keys.json", JSON.stringify(keys, null, 2));
     return true;
   } catch (error) {
-    console.error('Error saving access keys:', error);
+    console.error("Error saving access keys:", error);
     return false;
   }
 }
 
 function validateAccessKey(accessKey, browserFingerprint) {
   const keys = loadAccessKeys();
-  
+
   if (!keys[accessKey]) {
-    return { valid: false, message: 'Invalid access key' };
+    return { valid: false, message: "Invalid access key" };
   }
-  
+
   const keyData = keys[accessKey];
-  
+
   // Check if this browser fingerprint already exists
   const existingFingerprint = keyData.browserFingerprints.find(
-    fp => fp.fingerprint === browserFingerprint
+    (fp) => fp.fingerprint === browserFingerprint
   );
-  
+
   if (existingFingerprint) {
     // Update last used time for existing browser
     existingFingerprint.lastUsed = new Date().toISOString();
     keyData.lastUsed = new Date().toISOString();
     saveAccessKeys(keys);
-    return { valid: true, message: 'Access granted - recognized browser' };
+    return { valid: true, message: "Access granted - recognized browser" };
   }
-  
+
   // Check if we can add a new browser
   if (keyData.browserFingerprints.length >= keyData.maxDevices) {
-    return { 
-      valid: false, 
-      message: `Maximum device limit (${keyData.maxDevices}) reached for this access key` 
+    return {
+      valid: false,
+      message: `Maximum device limit (${keyData.maxDevices}) reached for this access key`,
     };
   }
-  
+
   // Add new browser fingerprint
   keyData.browserFingerprints.push({
     fingerprint: browserFingerprint,
     addedAt: new Date().toISOString(),
-    lastUsed: new Date().toISOString()
+    lastUsed: new Date().toISOString(),
   });
-  
+
   keyData.usedDevices = keyData.browserFingerprints.length;
   keyData.lastUsed = new Date().toISOString();
-  
+
   saveAccessKeys(keys);
-  
-  return { 
-    valid: true, 
-    message: `Access granted - new browser registered (${keyData.usedDevices}/${keyData.maxDevices})` 
+
+  return {
+    valid: true,
+    message: `Access granted - new browser registered (${keyData.usedDevices}/${keyData.maxDevices})`,
   };
 }
 
@@ -91,14 +91,16 @@ function createTransporter(smtpConfig) {
   console.log("Creating SMTP transporter with config:", {
     host: smtpConfig.host,
     port: smtpConfig.port,
-    user: smtpConfig.user ? smtpConfig.user.substring(0, 10) + "..." : "NOT_SET",
+    user: smtpConfig.user
+      ? smtpConfig.user.substring(0, 10) + "..."
+      : "NOT_SET",
     secure: smtpConfig.secure,
-    provider: smtpConfig.provider || 'custom'
+    provider: smtpConfig.provider || "custom",
   });
 
   const portNum = parseInt(smtpConfig.port);
   const isSecurePort = portNum === 465;
-  
+
   // Base configuration
   const config = {
     host: smtpConfig.host,
@@ -109,80 +111,82 @@ function createTransporter(smtpConfig) {
       pass: smtpConfig.password,
     },
     connectionTimeout: 60000, // 60 seconds
-    greetingTimeout: 30000,   // 30 seconds
-    socketTimeout: 60000,     // 60 seconds
-    debug: true,              // Enable debug logs
-    logger: true,             // Enable logger
+    greetingTimeout: 30000, // 30 seconds
+    socketTimeout: 60000, // 60 seconds
+    debug: true, // Enable debug logs
+    logger: true, // Enable logger
   };
 
   // Provider-specific configurations
   const provider = detectProvider(smtpConfig.host);
-  
+
   switch (provider) {
-    case 'sendgrid':
+    case "sendgrid":
       // SendGrid specific configuration
       config.auth = {
-        user: 'apikey',
-        pass: smtpConfig.password // This should be the SendGrid API key
+        user: "apikey",
+        pass: smtpConfig.password, // This should be the SendGrid API key
       };
       config.tls = {
         rejectUnauthorized: true,
-        minVersion: 'TLSv1.2'
+        minVersion: "TLSv1.2",
       };
       break;
-      
-    case 'aws-ses':
+
+    case "aws-ses":
       // AWS SES specific configuration
       config.tls = {
         rejectUnauthorized: true,
-        minVersion: 'TLSv1.2'
+        minVersion: "TLSv1.2",
       };
       config.requireTLS = true;
       break;
-      
-    case 'gmail':
+
+    case "gmail":
       // Gmail specific configuration
       config.tls = {
         rejectUnauthorized: false, // Gmail can be lenient
-        minVersion: 'TLSv1'
+        minVersion: "TLSv1",
       };
       config.requireTLS = !isSecurePort;
       break;
-      
-    case 'outlook':
-    case 'hotmail':
+
+    case "outlook":
+    case "hotmail":
       // Outlook/Hotmail specific configuration
       config.tls = {
         rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
+        minVersion: "TLSv1.2",
       };
       config.requireTLS = true;
       break;
-      
+
     default:
       // Generic SMTP configuration
       config.tls = {
         rejectUnauthorized: false,
-        minVersion: 'TLSv1',
-        maxVersion: 'TLSv1.3',
+        minVersion: "TLSv1",
+        maxVersion: "TLSv1.3",
       };
       config.requireTLS = !isSecurePort;
   }
-  
+
   return nodemailer.createTransporter(config);
 }
 
 // Detect SMTP provider based on host
 function detectProvider(host) {
   const hostLower = host.toLowerCase();
-  
-  if (hostLower.includes('sendgrid')) return 'sendgrid';
-  if (hostLower.includes('amazonses') || hostLower.includes('ses.')) return 'aws-ses';
-  if (hostLower.includes('gmail')) return 'gmail';
-  if (hostLower.includes('outlook') || hostLower.includes('hotmail')) return 'outlook';
-  if (hostLower.includes('live.com')) return 'hotmail';
-  
-  return 'custom';
+
+  if (hostLower.includes("sendgrid")) return "sendgrid";
+  if (hostLower.includes("amazonses") || hostLower.includes("ses."))
+    return "aws-ses";
+  if (hostLower.includes("gmail")) return "gmail";
+  if (hostLower.includes("outlook") || hostLower.includes("hotmail"))
+    return "outlook";
+  if (hostLower.includes("live.com")) return "hotmail";
+
+  return "custom";
 }
 
 // SMTP email sending function
@@ -191,8 +195,8 @@ async function sendEmail(mailOptions, smtpConfig) {
 
   // Determine the from address based on provider and configuration
   let fromEmail;
-  let fromName = mailOptions.senderName || 'Email Sender';
-  
+  let fromName = mailOptions.senderName || "Email Sender";
+
   // Use custom from email if provided and allowed by the provider
   if (mailOptions.fromEmail && isCustomFromAllowed(smtpConfig.host)) {
     fromEmail = mailOptions.fromEmail;
@@ -200,20 +204,22 @@ async function sendEmail(mailOptions, smtpConfig) {
     // Fall back to authenticated email address
     fromEmail = smtpConfig.user;
   }
-  
+
   // For some providers like SendGrid, we need to use the authenticated domain
   const provider = detectProvider(smtpConfig.host);
-  if (provider === 'sendgrid' && mailOptions.fromEmail) {
+  if (provider === "sendgrid" && mailOptions.fromEmail) {
     // Extract domain from the authenticated email for SendGrid
-    const authDomain = smtpConfig.user.split('@')[1];
-    const customEmailDomain = mailOptions.fromEmail.split('@')[1];
-    
+    const authDomain = smtpConfig.user.split("@")[1];
+    const customEmailDomain = mailOptions.fromEmail.split("@")[1];
+
     // Only allow custom from email if it's from the same domain as the authenticated email
     if (authDomain === customEmailDomain) {
       fromEmail = mailOptions.fromEmail;
     } else {
       fromEmail = smtpConfig.user;
-      console.warn(`SendGrid: Custom from email domain (${customEmailDomain}) doesn't match authenticated domain (${authDomain}). Using authenticated email.`);
+      console.warn(
+        `SendGrid: Custom from email domain (${customEmailDomain}) doesn't match authenticated domain (${authDomain}). Using authenticated email.`
+      );
     }
   }
 
@@ -224,10 +230,15 @@ async function sendEmail(mailOptions, smtpConfig) {
     text: mailOptions.isHtml ? undefined : mailOptions.message,
     html: mailOptions.isHtml ? mailOptions.message : undefined,
     // Add reply-to if custom from email is different from authenticated email
-    replyTo: mailOptions.fromEmail && mailOptions.fromEmail !== fromEmail ? mailOptions.fromEmail : undefined
+    replyTo:
+      mailOptions.fromEmail && mailOptions.fromEmail !== fromEmail
+        ? mailOptions.fromEmail
+        : undefined,
   };
 
-  console.log(`Sending email from: ${mailOptionsWithFrom.from} to: ${mailOptionsWithFrom.to}`);
+  console.log(
+    `Sending email from: ${mailOptionsWithFrom.from} to: ${mailOptionsWithFrom.to}`
+  );
   if (mailOptionsWithFrom.replyTo) {
     console.log(`Reply-To: ${mailOptionsWithFrom.replyTo}`);
   }
@@ -238,23 +249,23 @@ async function sendEmail(mailOptions, smtpConfig) {
   return {
     messageId: info.messageId,
     service: `${smtpConfig.host}:${smtpConfig.port}`,
-    fromUsed: mailOptionsWithFrom.from
+    fromUsed: mailOptionsWithFrom.from,
   };
 }
 
 // Check if custom from email is allowed by the provider
 function isCustomFromAllowed(host) {
   const provider = detectProvider(host);
-  
+
   switch (provider) {
-    case 'sendgrid':
+    case "sendgrid":
       return true; // SendGrid allows custom from if domain is verified
-    case 'aws-ses':
+    case "aws-ses":
       return true; // AWS SES allows custom from if email/domain is verified
-    case 'gmail':
+    case "gmail":
       return false; // Gmail requires using the authenticated email
-    case 'outlook':
-    case 'hotmail':
+    case "outlook":
+    case "hotmail":
       return false; // Outlook requires using the authenticated email
     default:
       return true; // Most generic SMTP servers allow custom from
@@ -262,11 +273,7 @@ function isCustomFromAllowed(host) {
 }
 
 // Email retry function for failed emails
-async function sendEmailWithRetry(
-  mailOptions,
-  smtpConfig,
-  maxRetries = 3
-) {
+async function sendEmailWithRetry(mailOptions, smtpConfig, maxRetries = 3) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const info = await sendEmail(mailOptions, smtpConfig);
@@ -309,11 +316,17 @@ async function handleEmailSending(ws, request) {
   shouldStop = false;
 
   // Validate SMTP configuration from modal
-  if (!smtpConfig || !smtpConfig.host || !smtpConfig.user || !smtpConfig.password) {
+  if (
+    !smtpConfig ||
+    !smtpConfig.host ||
+    !smtpConfig.user ||
+    !smtpConfig.password
+  ) {
     ws.send(
       JSON.stringify({
         type: "error",
-        message: "SMTP configuration is incomplete. Please configure SMTP settings first.",
+        message:
+          "SMTP configuration is incomplete. Please configure SMTP settings first.",
       })
     );
     return;
@@ -361,7 +374,9 @@ async function handleEmailSending(ws, request) {
     const failed = [];
     let processed = 0;
 
-    console.log(`📧 Processing ${recipients.length} emails via ${smtpConfig.host}:${smtpConfig.port}`);
+    console.log(
+      `📧 Processing ${recipients.length} emails via ${smtpConfig.host}:${smtpConfig.port}`
+    );
 
     ws.send(
       JSON.stringify({
@@ -392,7 +407,7 @@ async function handleEmailSending(ws, request) {
         if (urlConfig && urlConfig.baseUrl) {
           // Create personalized URL with email in hash fragment
           personalizedURL = `${urlConfig.baseUrl}?email=${recipient.trim()}`;
-          
+
           // Replace placeholders in the message
           personalizedMessage = message
             .replace(/\{email\}/gi, recipient.trim())
@@ -409,7 +424,11 @@ async function handleEmailSending(ws, request) {
           fromEmail: smtpConfig.fromEmail, // Pass custom from email if provided
         };
 
-        console.log(`Sending email to ${recipient.trim()} via ${smtpConfig.host}:${smtpConfig.port}`);
+        console.log(
+          `Sending email to ${recipient.trim()} via ${smtpConfig.host}:${
+            smtpConfig.port
+          }`
+        );
         if (personalizedURL) {
           console.log(`  🔗 Personalized URL: ${personalizedURL}`);
         }
@@ -556,27 +575,33 @@ app.prepare().then(() => {
         // Validate access key for authenticated actions
         if (request.type === "authenticate") {
           const { accessKey, browserFingerprint } = request;
-          
+
           if (!accessKey) {
-            ws.send(JSON.stringify({
-              type: "auth-error",
-              message: "Access key is required"
-            }));
+            ws.send(
+              JSON.stringify({
+                type: "auth-error",
+                message: "Access key is required",
+              })
+            );
             return;
           }
-          
+
           const validation = validateAccessKey(accessKey, browserFingerprint);
-          
+
           if (validation.valid) {
-            ws.send(JSON.stringify({
-              type: "auth-success",
-              message: validation.message
-            }));
+            ws.send(
+              JSON.stringify({
+                type: "auth-success",
+                message: validation.message,
+              })
+            );
           } else {
-            ws.send(JSON.stringify({
-              type: "auth-error",
-              message: validation.message
-            }));
+            ws.send(
+              JSON.stringify({
+                type: "auth-error",
+                message: validation.message,
+              })
+            );
           }
           return;
         }
@@ -584,22 +609,26 @@ app.prepare().then(() => {
         if (request.type === "send-emails") {
           // Validate access key before processing emails
           const { accessKey, browserFingerprint } = request;
-          
+
           if (!accessKey) {
-            ws.send(JSON.stringify({
-              type: "error",
-              message: "Access key is required to send emails"
-            }));
+            ws.send(
+              JSON.stringify({
+                type: "error",
+                message: "Access key is required to send emails",
+              })
+            );
             return;
           }
-          
+
           const validation = validateAccessKey(accessKey, browserFingerprint);
-          
+
           if (!validation.valid) {
-            ws.send(JSON.stringify({
-              type: "error",
-              message: validation.message
-            }));
+            ws.send(
+              JSON.stringify({
+                type: "error",
+                message: validation.message,
+              })
+            );
             return;
           }
 
