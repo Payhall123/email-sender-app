@@ -7,11 +7,9 @@ const next = require("next");
 const { WebSocketServer } = require("ws");
 const nodemailer = require("nodemailer");
 const fs = require("fs");
-const crypto = require("crypto");
-
 const dev = process.env.NODE_ENV !== "production";
 const hostname = dev ? "localhost" : "0.0.0.0"; // Bind to localhost in dev, all interfaces in production
-const port = parseInt(process.env.PORT) || 10000; // Use Render's default port
+const port = parseInt(process.env.PORT) || (dev ? 3000 : 10000); // Use 3000 for dev, 10000 for production
 
 // Initialize Next.js app
 const app = next({ dev, hostname, port });
@@ -88,22 +86,15 @@ function validateAccessKey(accessKey, browserFingerprint) {
 
 // Create SMTP transporter with dynamic credentials from modal
 function createTransporter(smtpConfig) {
-  console.log("Creating SMTP transporter with config:", {
-    host: smtpConfig.host,
-    port: smtpConfig.port,
-    user: smtpConfig.user
-      ? smtpConfig.user.substring(0, 10) + "..."
-      : "NOT_SET",
-    secure: smtpConfig.secure,
-    provider: smtpConfig.provider || "custom",
-  });
+  // Trim whitespace from host to prevent DNS resolution errors
+  const trimmedHost = smtpConfig.host.trim();
 
   const portNum = parseInt(smtpConfig.port);
   const isSecurePort = portNum === 465;
 
   // Base configuration
   const config = {
-    host: smtpConfig.host,
+    host: trimmedHost,
     port: portNum,
     secure: isSecurePort, // true for SSL (port 465), false for STARTTLS (port 587)
     auth: {
@@ -117,8 +108,18 @@ function createTransporter(smtpConfig) {
     logger: true, // Enable logger
   };
 
-  // Provider-specific configurations
-  const provider = detectProvider(smtpConfig.host);
+  // Provider-specific configurations - always detect from host
+  const provider = detectProvider(trimmedHost);
+
+  console.log("Creating SMTP transporter with config:", {
+    host: trimmedHost,
+    port: smtpConfig.port,
+    user: smtpConfig.user
+      ? smtpConfig.user.substring(0, 10) + "..."
+      : "NOT_SET",
+    secure: isSecurePort,
+    provider: provider,
+  });
 
   switch (provider) {
     case "sendgrid":
@@ -171,7 +172,7 @@ function createTransporter(smtpConfig) {
       config.requireTLS = !isSecurePort;
   }
 
-  return nodemailer.createTransporter(config);
+  return nodemailer.createTransport(config);
 }
 
 // Detect SMTP provider based on host
@@ -197,8 +198,11 @@ async function sendEmail(mailOptions, smtpConfig) {
   let fromEmail;
   let fromName = mailOptions.senderName || "Email Sender";
 
+  // Trim host for consistency
+  const trimmedHost = smtpConfig.host.trim();
+
   // Use custom from email if provided and allowed by the provider
-  if (mailOptions.fromEmail && isCustomFromAllowed(smtpConfig.host)) {
+  if (mailOptions.fromEmail && isCustomFromAllowed(trimmedHost)) {
     fromEmail = mailOptions.fromEmail;
   } else {
     // Fall back to authenticated email address
@@ -206,7 +210,7 @@ async function sendEmail(mailOptions, smtpConfig) {
   }
 
   // For some providers like SendGrid, we need to use the authenticated domain
-  const provider = detectProvider(smtpConfig.host);
+  const provider = detectProvider(trimmedHost);
   if (provider === "sendgrid" && mailOptions.fromEmail) {
     // Extract domain from the authenticated email for SendGrid
     const authDomain = smtpConfig.user.split("@")[1];
