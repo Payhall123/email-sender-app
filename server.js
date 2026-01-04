@@ -168,7 +168,18 @@ function createTransporter(smtpConfig) {
         rejectUnauthorized: false,
         minVersion: "TLSv1.2",
       };
-      config.requireTLS = !isSecurePort;
+      // iCloud SMTP typically uses port 587 with STARTTLS
+      if (portNum === 587) {
+        config.secure = false;
+        config.requireTLS = true;
+      } else if (portNum === 465) {
+        config.secure = true;
+        config.requireTLS = false;
+      } else {
+        // Default to STARTTLS for other ports
+        config.secure = false;
+        config.requireTLS = true;
+      }
       break;
 
     default:
