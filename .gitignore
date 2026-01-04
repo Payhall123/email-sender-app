@@ -16,7 +16,8 @@
 # next.js
 /.next/
 /out/
-
+# sensitive access
+/all_access_keys.txt
 # production
 /build
 

@@ -1,10 +1,10 @@
 {
   "5efee8c71f92ce3287644556fee614ee": {
     "maxDevices": 2,
-    "usedDevices": 0,
+    "usedDevices": 1,
     "browserFingerprints": [],
     "createdAt": "2025-08-18T07:22:28.229Z",
-    "lastUsed": null
+    "lastUsed": "2026-01-04T00:58:21.081Z"
   },
   "e7bcb0520f782e54a52e855d2ddd38fc": {
     "maxDevices": 2,
@@ -562,18 +562,7 @@
   "01c729809613bf809d49062be3350a10": {
     "maxDevices": 2,
     "usedDevices": 2,
-    "browserFingerprints": [
-      {
-        "fingerprint": "TW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzEzOC4wLjAuMCBTYWZhcmkvNTM3LjM2LWVuLUdCLTE2ODB4MTA1MC1BZnJpY2EvTGFnb3M=",
-        "addedAt": "2026-01-03T22:56:13.115Z",
-        "lastUsed": "2026-01-03T23:38:14.532Z"
-      },
-      {
-        "fingerprint": "TW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzEzOC4wLjAuMCBTYWZhcmkvNTM3LjM2LWVuLUdCLTEyODB4ODAwLUFmcmljYS9MYWdvcw==",
-        "addedAt": "2026-01-03T23:12:33.720Z",
-        "lastUsed": "2026-01-03T23:20:03.416Z"
-      }
-    ],
+    "browserFingerprints": [],
     "createdAt": "2025-08-18T07:22:28.477Z",
     "lastUsed": "2026-01-03T23:38:14.532Z"
   },
