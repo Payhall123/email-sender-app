@@ -180,6 +180,11 @@ function createTransporter(smtpConfig) {
         config.secure = false;
         config.requireTLS = true;
       }
+
+      // Additional iCloud-specific settings for better compatibility
+      config.connectionTimeout = 30000; // 30 seconds for iCloud
+      config.greetingTimeout = 30000; // 30 seconds
+      config.socketTimeout = 60000; // 60 seconds
       break;
 
     default:
@@ -206,7 +211,11 @@ function detectProvider(host) {
   if (hostLower.includes("outlook") || hostLower.includes("hotmail"))
     return "outlook";
   if (hostLower.includes("live.com")) return "hotmail";
-  if (hostLower.includes("icloud") || hostLower.includes("me.com") || hostLower.includes("mac.com"))
+  if (
+    hostLower.includes("icloud") ||
+    hostLower.includes("me.com") ||
+    hostLower.includes("mac.com")
+  )
     return "icloud";
 
   return "custom";
