@@ -8,8 +8,8 @@ const { WebSocketServer } = require("ws");
 const nodemailer = require("nodemailer");
 const fs = require("fs");
 const dev = process.env.NODE_ENV !== "production";
-const hostname = dev ? "localhost" : "0.0.0.0"; // Bind to localhost in dev, all interfaces in production
-const port = parseInt(process.env.PORT) || (dev ? 3000 : 10000); // Use 3000 for dev, 10000 for production
+const hostname = "0.0.0.0"; // Always bind to all interfaces for Replit
+const port = parseInt(process.env.PORT) || 5000; // Use port 5000 for Replit
 
 // Initialize Next.js app
 const app = next({ dev, hostname, port });
