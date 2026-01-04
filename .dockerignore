@@ -1,0 +1,56 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js build output
+.next
+out
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+captain-definition
+
+# Documentation
+README.md
+*.md
+!CAPROVER_DEPLOY.md
+
+# Development files
+generate_access_keys.js
+generate_smtp_credentials.js
+generate_smtp_credentials.py
+tst.html
+
+# Deployment configs (keep only CapRover)
+railway.json
+render.yaml
+wrangler.toml
+
+# Access keys (will be mounted separately)
+access_keys.json
+access_keys2.json
+all_access_keys.txt
