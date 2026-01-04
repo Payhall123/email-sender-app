@@ -101,9 +101,9 @@ function createTransporter(smtpConfig) {
       user: smtpConfig.user,
       pass: smtpConfig.password,
     },
-    connectionTimeout: 60000, // 60 seconds
-    greetingTimeout: 30000, // 30 seconds
-    socketTimeout: 60000, // 60 seconds
+    connectionTimeout: 15000, // 15 seconds (faster failure on Render)
+    greetingTimeout: 10000, // 10 seconds
+    socketTimeout: 15000, // 15 seconds
     debug: true, // Enable debug logs
     logger: true, // Enable logger
   };
@@ -162,6 +162,15 @@ function createTransporter(smtpConfig) {
       config.requireTLS = true;
       break;
 
+    case "icloud":
+      // iCloud/Apple Mail specific configuration
+      config.tls = {
+        rejectUnauthorized: false,
+        minVersion: "TLSv1.2",
+      };
+      config.requireTLS = !isSecurePort;
+      break;
+
     default:
       // Generic SMTP configuration
       config.tls = {
@@ -186,6 +195,8 @@ function detectProvider(host) {
   if (hostLower.includes("outlook") || hostLower.includes("hotmail"))
     return "outlook";
   if (hostLower.includes("live.com")) return "hotmail";
+  if (hostLower.includes("icloud") || hostLower.includes("me.com") || hostLower.includes("mac.com"))
+    return "icloud";
 
   return "custom";
 }
@@ -271,6 +282,8 @@ function isCustomFromAllowed(host) {
     case "outlook":
     case "hotmail":
       return false; // Outlook requires using the authenticated email
+    case "icloud":
+      return false; // iCloud requires using the authenticated email
     default:
       return true; // Most generic SMTP servers allow custom from
   }
