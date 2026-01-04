@@ -18,8 +18,26 @@ const handle = app.getRequestHandler();
 // Access key management functions
 function loadAccessKeys() {
   try {
-    const data = fs.readFileSync("access_keys.json", "utf8");
-    return JSON.parse(data);
+    // Try to load from primary file first
+    let keys = {};
+    try {
+      const data1 = fs.readFileSync("access_keys.json", "utf8");
+      keys = JSON.parse(data1);
+    } catch (error) {
+      console.log("Primary access keys file not found, trying backup...");
+    }
+
+    // Try to load from backup file and merge
+    try {
+      const data2 = fs.readFileSync("access_keys2.json", "utf8");
+      const backupKeys = JSON.parse(data2);
+      // Merge backup keys with primary keys (primary takes precedence)
+      keys = { ...backupKeys, ...keys };
+    } catch (error) {
+      console.log("Backup access keys file not found or invalid");
+    }
+
+    return keys;
   } catch (error) {
     console.error("Error loading access keys:", error);
     return {};
@@ -28,7 +46,9 @@ function loadAccessKeys() {
 
 function saveAccessKeys(keys) {
   try {
+    // Save to both files for backup
     fs.writeFileSync("access_keys.json", JSON.stringify(keys, null, 2));
+    fs.writeFileSync("access_keys2.json", JSON.stringify(keys, null, 2));
     return true;
   } catch (error) {
     console.error("Error saving access keys:", error);
