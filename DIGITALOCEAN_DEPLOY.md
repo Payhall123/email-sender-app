@@ -7,7 +7,7 @@ This guide will help you deploy the Email Sender App to Digital Ocean App Platfo
 - Digital Ocean account
 - Git repository (GitHub, GitLab, or Bitbucket)
 - Domain (optional, for custom domain)
-
+j
 ## Deployment Steps
 
 ### 1. Prepare Your Repository
