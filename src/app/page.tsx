@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
 import {
