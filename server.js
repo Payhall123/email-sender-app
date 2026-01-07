@@ -367,6 +367,7 @@ async function handleEmailSending(ws, request) {
     isHtml = false,
     smtpConfig,
     urlConfig, // Added for dynamic URL personalization
+    delaySeconds = 0, // Optional per-email delay in seconds
   } = request;
 
   // Reset stop flag
@@ -535,10 +536,13 @@ async function handleEmailSending(ws, request) {
           })
         );
 
-        // Short delay between emails for SMTP sending
-        await new Promise((resolve) =>
-          setTimeout(resolve, 500 + Math.random() * 300)
-        );
+        // Short delay between emails for SMTP sending (configurable)
+        const perEmailDelayMs =
+          typeof delaySeconds === "number" && delaySeconds > 0
+            ? delaySeconds * 1000
+            : 500 + Math.random() * 300;
+
+        await new Promise((resolve) => setTimeout(resolve, perEmailDelayMs));
       } catch (error) {
         console.error(`Failed to send email to ${recipient}:`, error);
 

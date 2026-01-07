@@ -57,6 +57,7 @@ export default function Home() {
   } | null>(null);
   const [currentSocket, setCurrentSocket] = useState<WebSocket | null>(null);
   const [isStopping, setIsStopping] = useState(false);
+  const [delaySeconds, setDelaySeconds] = useState(3);
 
   // Authentication states
   const [accessKey, setAccessKey] = useState("");
@@ -494,6 +495,7 @@ export default function Home() {
           browserFingerprint: browserFingerprint,
           smtpConfig: smtpConfig,
           urlConfig: urlConfig,
+          delaySeconds: delaySeconds,
         })
       );
     });
@@ -827,6 +829,23 @@ export default function Home() {
                 <h1 className="text-3xl font-bold text-gray-900">
                   Email Sender
                 </h1>
+              </div>
+            
+            </div>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center">
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Delay
+                </h1>
+                <select
+                  className="ml-4 px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  value={delaySeconds}
+                  onChange={(e) => setDelaySeconds(Number(e.target.value))}
+                >
+                  <option value={3}>3 seconds</option>
+                  <option value={5}>5 seconds</option>
+                  <option value={10}>10 seconds</option>
+                </select>
               </div>
               <button
                 type="button"
