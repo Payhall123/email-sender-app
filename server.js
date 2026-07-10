@@ -6,6 +6,7 @@ const { parse } = require("url");
 const next = require("next");
 const { WebSocketServer } = require("ws");
 const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const fs = require("fs");
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "0.0.0.0"; // Always bind to all interfaces for Replit
@@ -257,14 +258,20 @@ function detectProvider(host) {
 
 // SMTP email sending function
 async function sendEmail(mailOptions, smtpConfig) {
+  const trimmedHost = smtpConfig.host.trim();
+  const provider = detectProvider(trimmedHost);
+
+  // Use Resend API if provider is resend
+  if (provider === "resend") {
+    return sendEmailViaResendAPI(mailOptions, smtpConfig);
+  }
+
+  // Otherwise use SMTP
   const transporter = createTransporter(smtpConfig);
 
   // Determine the from address based on provider and configuration
   let fromEmail;
   let fromName = mailOptions.senderName || "Email Sender";
-
-  // Trim host for consistency
-  const trimmedHost = smtpConfig.host.trim();
 
   // Use custom from email if provided and allowed by the provider
   if (mailOptions.fromEmail && isCustomFromAllowed(trimmedHost)) {
@@ -274,8 +281,7 @@ async function sendEmail(mailOptions, smtpConfig) {
     fromEmail = smtpConfig.user;
   }
 
-  // For some providers like SendGrid and Resend, we need to use the authenticated domain
-  const provider = detectProvider(trimmedHost);
+  // For some providers like SendGrid, we need to use the authenticated domain
   if (provider === "sendgrid" && mailOptions.fromEmail) {
     // Extract domain from the authenticated email for SendGrid
     const authDomain = smtpConfig.user.split("@")[1];
@@ -288,19 +294,6 @@ async function sendEmail(mailOptions, smtpConfig) {
       fromEmail = smtpConfig.user;
       console.warn(
         `SendGrid: Custom from email domain (${customEmailDomain}) doesn't match authenticated domain (${authDomain}). Using authenticated email.`
-      );
-    }
-  }
-
-  // Resend requires a valid from email address, not just "resend"
-  if (provider === "resend") {
-    if (mailOptions.fromEmail) {
-      fromEmail = mailOptions.fromEmail;
-    } else {
-      // Use a default Resend from address if no custom from is provided
-      fromEmail = "onboarding@resend.dev";
-      console.warn(
-        `Resend: No custom from email provided. Using default: onboarding@resend.dev`
       );
     }
   }
@@ -333,6 +326,50 @@ async function sendEmail(mailOptions, smtpConfig) {
     service: `${smtpConfig.host}:${smtpConfig.port}`,
     fromUsed: mailOptionsWithFrom.from,
   };
+}
+
+// Send email using Resend API
+async function sendEmailViaResendAPI(mailOptions, smtpConfig) {
+  const resend = new Resend(smtpConfig.password);
+  
+  const fromName = mailOptions.senderName || "Email Sender";
+  const fromEmail = mailOptions.fromEmail || "onboarding@resend.dev";
+  const fromAddress = `${fromName} <${fromEmail}>`;
+
+  console.log(`Sending email via Resend API from: ${fromAddress} to: ${mailOptions.to}`);
+
+  try {
+    const emailData = {
+      from: fromAddress,
+      to: [mailOptions.to],
+      subject: mailOptions.subject,
+    };
+
+    // Add content based on whether it's HTML or text
+    if (mailOptions.isHtml) {
+      emailData.html = mailOptions.message;
+    } else {
+      emailData.text = mailOptions.message;
+    }
+
+    const { data, error } = await resend.emails.send(emailData);
+
+    if (error) {
+      console.error("Resend API error:", error);
+      throw new Error(`Resend API error: ${error.message}`);
+    }
+
+    console.log("Resend API email sent successfully:", data);
+
+    return {
+      messageId: data.id,
+      service: "Resend API",
+      fromUsed: fromAddress,
+    };
+  } catch (error) {
+    console.error("Error sending email via Resend API:", error);
+    throw error;
+  }
 }
 
 // Check if custom from email is allowed by the provider

@@ -19,6 +19,7 @@
     "react-dom": "19.1.0",
     "react-hook-form": "^7.61.1",
     "react-hot-toast": "^2.4.1",
+    "resend": "^6.17.2",
     "ws": "^8.18.0",
     "zod": "^4.0.10"
   },

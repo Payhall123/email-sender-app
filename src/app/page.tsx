@@ -162,9 +162,9 @@ export default function Home() {
       provider: "aws-ses",
     },
     resend: {
-      host: "smtp.resend.com",
-      port: "465",
-      secure: true,
+      host: "api.resend.com",
+      port: "",
+      secure: false,
       provider: "resend",
     },
     custom: {
@@ -640,8 +640,8 @@ export default function Home() {
                     <option value="custom">Custom SMTP</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    Select a preset to auto-fill SMTP settings for popular
-                    providers.
+                    Select a preset to auto-fill settings for popular providers.
+                    {smtpConfig.provider === "resend" && " Resend uses API instead of SMTP."}
                   </p>
                 </div>
 
@@ -692,7 +692,7 @@ export default function Home() {
                     )}
                     {smtpConfig.provider === "resend" && (
                       <span className="text-xs text-gray-500 ml-2">
-                        (Use &apos;resend&apos;)
+                        (Not required for API)
                       </span>
                     )}
                   </label>
@@ -705,7 +705,7 @@ export default function Home() {
                       smtpConfig.provider === "sendgrid"
                         ? "apikey"
                         : smtpConfig.provider === "resend"
-                        ? "resend"
+                        ? "Not required"
                         : "your-email@gmail.com"
                     }
                     className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -730,7 +730,7 @@ export default function Home() {
                     )}
                     {smtpConfig.provider === "resend" && (
                       <span className="text-xs text-gray-500 ml-2">
-                        (Resend API Key)
+                        (Resend API Key - re_xxxxxxxxx)
                       </span>
                     )}
                   </label>
@@ -748,7 +748,7 @@ export default function Home() {
                           : smtpConfig.provider === "aws-ses"
                           ? "Your AWS Secret Access Key"
                           : smtpConfig.provider === "resend"
-                          ? "re_xxxxxxxxxxxx..."
+                          ? "re_hHR7HDmU_35TRK98pYYL3kBvSVAujDqHY"
                           : "Your app password or SMTP password"
                       }
                       className="w-full px-3 text-black py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
