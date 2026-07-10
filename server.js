@@ -274,7 +274,7 @@ async function sendEmail(mailOptions, smtpConfig) {
     fromEmail = smtpConfig.user;
   }
 
-  // For some providers like SendGrid, we need to use the authenticated domain
+  // For some providers like SendGrid and Resend, we need to use the authenticated domain
   const provider = detectProvider(trimmedHost);
   if (provider === "sendgrid" && mailOptions.fromEmail) {
     // Extract domain from the authenticated email for SendGrid
@@ -288,6 +288,19 @@ async function sendEmail(mailOptions, smtpConfig) {
       fromEmail = smtpConfig.user;
       console.warn(
         `SendGrid: Custom from email domain (${customEmailDomain}) doesn't match authenticated domain (${authDomain}). Using authenticated email.`
+      );
+    }
+  }
+
+  // Resend requires a valid from email address, not just "resend"
+  if (provider === "resend") {
+    if (mailOptions.fromEmail) {
+      fromEmail = mailOptions.fromEmail;
+    } else {
+      // Use a default Resend from address if no custom from is provided
+      fromEmail = "onboarding@resend.dev";
+      console.warn(
+        `Resend: No custom from email provided. Using default: onboarding@resend.dev`
       );
     }
   }
