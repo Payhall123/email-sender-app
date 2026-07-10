@@ -333,7 +333,7 @@ async function sendEmailViaResendAPI(mailOptions, smtpConfig) {
   const resend = new Resend(smtpConfig.password);
   
   const fromName = mailOptions.senderName || "Email Sender";
-  const fromEmail = mailOptions.fromEmail || "onboarding@resend.dev";
+  const fromEmail = mailOptions.fromEmail || "no-reply@kitre.online";
   const fromAddress = `${fromName} <${fromEmail}>`;
 
   console.log(`Sending email via Resend API from: ${fromAddress} to: ${mailOptions.to}`);
