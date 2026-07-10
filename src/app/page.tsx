@@ -748,7 +748,7 @@ export default function Home() {
                           : smtpConfig.provider === "aws-ses"
                           ? "Your AWS Secret Access Key"
                           : smtpConfig.provider === "resend"
-                          ? "re_hHR7HDmU_35TRK98pYYL3kBvSVAujDqHY"
+                          ? "re_xxxxxxxxx"
                           : "Your app password or SMTP password"
                       }
                       className="w-full px-3 text-black py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
