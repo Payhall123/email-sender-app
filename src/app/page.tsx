@@ -161,6 +161,12 @@ export default function Home() {
       secure: false,
       provider: "aws-ses",
     },
+    resend: {
+      host: "smtp.resend.com",
+      port: "465",
+      secure: true,
+      provider: "resend",
+    },
     custom: {
       host: "",
       port: "587",
@@ -630,6 +636,7 @@ export default function Home() {
                     <option value="outlook">Outlook/Hotmail</option>
                     <option value="sendgrid">SendGrid</option>
                     <option value="aws-ses">AWS SES</option>
+                    <option value="resend">Resend</option>
                     <option value="custom">Custom SMTP</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
@@ -683,6 +690,11 @@ export default function Home() {
                         (Use &apos;apikey&apos;)
                       </span>
                     )}
+                    {smtpConfig.provider === "resend" && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        (Use &apos;resend&apos;)
+                      </span>
+                    )}
                   </label>
                   <input
                     type="text"
@@ -692,6 +704,8 @@ export default function Home() {
                     placeholder={
                       smtpConfig.provider === "sendgrid"
                         ? "apikey"
+                        : smtpConfig.provider === "resend"
+                        ? "resend"
                         : "your-email@gmail.com"
                     }
                     className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -714,6 +728,11 @@ export default function Home() {
                         (AWS Access Key Secret)
                       </span>
                     )}
+                    {smtpConfig.provider === "resend" && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        (Resend API Key)
+                      </span>
+                    )}
                   </label>
                   <div className="relative">
                     <input
@@ -728,6 +747,8 @@ export default function Home() {
                           ? "SG.xxxxxxxxxxxx..."
                           : smtpConfig.provider === "aws-ses"
                           ? "Your AWS Secret Access Key"
+                          : smtpConfig.provider === "resend"
+                          ? "re_xxxxxxxxxxxx..."
                           : "Your app password or SMTP password"
                       }
                       className="w-full px-3 text-black py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -772,6 +793,8 @@ export default function Home() {
                       ? "✅ SendGrid allows custom from emails if the domain is verified."
                       : smtpConfig.provider === "aws-ses"
                       ? "✅ AWS SES allows custom from emails if the email/domain is verified."
+                      : smtpConfig.provider === "resend"
+                      ? "✅ Resend allows custom from emails if the domain is verified."
                       : "✅ Most SMTP servers allow custom from email addresses."}
                   </p>
                 </div>

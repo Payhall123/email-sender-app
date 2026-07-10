@@ -207,6 +207,19 @@ function createTransporter(smtpConfig) {
       config.socketTimeout = 60000; // 60 seconds
       break;
 
+    case "resend":
+      // Resend specific configuration
+      config.auth = {
+        user: "resend",
+        pass: smtpConfig.password, // This should be the Resend API key
+      };
+      config.tls = {
+        rejectUnauthorized: true,
+        minVersion: "TLSv1.2",
+      };
+      config.requireTLS = true;
+      break;
+
     default:
       // Generic SMTP configuration
       config.tls = {
@@ -237,6 +250,7 @@ function detectProvider(host) {
     hostLower.includes("mac.com")
   )
     return "icloud";
+  if (hostLower.includes("resend")) return "resend";
 
   return "custom";
 }
@@ -317,6 +331,8 @@ function isCustomFromAllowed(host) {
       return true; // SendGrid allows custom from if domain is verified
     case "aws-ses":
       return true; // AWS SES allows custom from if email/domain is verified
+    case "resend":
+      return true; // Resend allows custom from if domain is verified
     case "gmail":
       return false; // Gmail requires using the authenticated email
     case "outlook":
