@@ -142,36 +142,42 @@ export default function Home() {
       port: "587",
       secure: false,
       provider: "gmail",
+      user: "",
     },
     outlook: {
       host: "smtp-mail.outlook.com",
       port: "587",
       secure: false,
       provider: "outlook",
+      user: "",
     },
     sendgrid: {
       host: "smtp.sendgrid.net",
       port: "587",
       secure: false,
       provider: "sendgrid",
+      user: "apikey",
     },
     "aws-ses": {
       host: "email-smtp.us-east-1.amazonaws.com",
       port: "587",
       secure: false,
       provider: "aws-ses",
+      user: "",
     },
     resend: {
       host: "api.resend.com",
       port: "",
       secure: false,
       provider: "resend",
+      user: "resend",
     },
     custom: {
       host: "",
       port: "587",
       secure: false,
       provider: "custom",
+      user: "",
     },
   };
 
@@ -185,6 +191,7 @@ export default function Home() {
         port: preset.port,
         secure: preset.secure,
         provider: preset.provider,
+        user: preset.user || "",
       }));
     }
   };
@@ -658,7 +665,10 @@ export default function Home() {
                     value={smtpConfig.host}
                     onChange={(e) => updateSmtpConfig("host", e.target.value)}
                     placeholder="smtp.gmail.com"
-                    className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    disabled={smtpConfig.provider === "resend"}
+                    className={`w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                      smtpConfig.provider === "resend" ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                   />
                 </div>
 
@@ -675,7 +685,10 @@ export default function Home() {
                     value={smtpConfig.port}
                     onChange={(e) => updateSmtpConfig("port", e.target.value)}
                     placeholder="587"
-                    className="w-full text-black px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    disabled={smtpConfig.provider === "resend"}
+                    className={`w-full text-black px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                      smtpConfig.provider === "resend" ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                   />
                 </div>
 
@@ -705,10 +718,13 @@ export default function Home() {
                       smtpConfig.provider === "sendgrid"
                         ? "apikey"
                         : smtpConfig.provider === "resend"
-                        ? "Not required"
+                        ? "resend"
                         : "your-email@gmail.com"
                     }
-                    className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    disabled={smtpConfig.provider === "resend"}
+                    className={`w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                      smtpConfig.provider === "resend" ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                   />
                 </div>
 
@@ -773,7 +789,9 @@ export default function Home() {
                     htmlFor="fromEmail"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Custom From Email (Optional)
+                    {smtpConfig.provider === "resend"
+                      ? "Domain Email (Required)"
+                      : "Custom From Email (Optional)"}
                   </label>
                   <input
                     type="email"
@@ -782,19 +800,23 @@ export default function Home() {
                     onChange={(e) =>
                       updateSmtpConfig("fromEmail", e.target.value)
                     }
-                    placeholder="Custom sender email address"
+                    placeholder={
+                      smtpConfig.provider === "resend"
+                        ? "your-domain@yourdomain.com"
+                        : "Custom sender email address"
+                    }
                     className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    {smtpConfig.provider === "gmail" ||
-                    smtpConfig.provider === "outlook"
+                    {smtpConfig.provider === "resend"
+                      ? "⚠️ Enter your verified domain email address for Resend API."
+                      : smtpConfig.provider === "gmail" ||
+                        smtpConfig.provider === "outlook"
                       ? "⚠️ Gmail and Outlook require using the authenticated email address."
                       : smtpConfig.provider === "sendgrid"
                       ? "✅ SendGrid allows custom from emails if the domain is verified."
                       : smtpConfig.provider === "aws-ses"
                       ? "✅ AWS SES allows custom from emails if the email/domain is verified."
-                      : smtpConfig.provider === "resend"
-                      ? "✅ Resend allows custom from emails if the domain is verified."
                       : "✅ Most SMTP servers allow custom from email addresses."}
                   </p>
                 </div>
@@ -807,7 +829,10 @@ export default function Home() {
                     onChange={(e) =>
                       updateSmtpConfig("secure", e.target.checked)
                     }
-                    className="h-4 w-4 text-black text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    disabled={smtpConfig.provider === "resend"}
+                    className={`h-4 w-4 text-black text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded ${
+                      smtpConfig.provider === "resend" ? "cursor-not-allowed" : ""
+                    }`}
                   />
                   <label
                     htmlFor="smtpSecure"
